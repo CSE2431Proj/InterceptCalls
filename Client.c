@@ -30,12 +30,13 @@ int main(int argc, char *argv[])
         reportError("Socket Initialization Failed!!"); 
     }
     printf("Please enter the IP address of the server you wish to connect to: \n");
-    scanf("%s", ipAddr);
+    //scanf("%s", ipAddr);
+    fgets(ipAddr,15,stdin);
 
 	printf("Please enter the Port number:  \n");
 	scanf("%d", &portNum);
-
-
+	getchar();
+        
     /*Assign the given port number and IP address to the socket*/
     memset(&serverAddr, 0 , sizeof(serverAddr));  //Fill address with zeros
     serverAddr.sin_family = AF_INET;		  //Address family
@@ -48,10 +49,12 @@ int main(int argc, char *argv[])
     {
         reportError("Server Connection Failed!!");
     }
-
+    
     /*Send data to server*/
-    printf("Enter a message to send to the server: \n");
     memset(msgBuffer, 0 , 4096);   //Fill buffer with zeros
+    printf("Enter a message to send to the server: \n");
+  //  scanf("%s", msgBuffer);
+   
     fgets(msgBuffer,4095,stdin);
    
     /*Write to socket*/
