@@ -16,46 +16,59 @@
 //Define bold green and reset fonts for shell 
 #define ANSI_COLOR_GREEN "\x1b[92m \x1b[1m"
 #define ANSI_COLOR_RESET "\x1b[0m"
-char currentDir[100]="~";
+#define ANSI_COLOR_WHITE "\x1b[0m \x1b[1m"
+char currentDir[100]="~"; //Char Array for displaying current directory in fake terminal
+//Conumer method for execueting commands put into the buffer by the soccket
+void *consumer(void *args) {
+    shared_struct *ptr = ((pthread_args *) args)->ptr;
+    FILE *fd = ((pthread_args *) args)->fd;
+    item elem;
+    
+    // Read data
+    while (1) {
+        sem_wait(&ptr->full);
+	sem_wait(&ptr->mutex);
+        // get an item from buffer
+        elem = ptr->buffer[ptr->out];
+        printf("%d\t%s", elem.id, elem.data);
+        if (elem.id == -1) break;
+	sem_post(&ptr->mutex);
+	sem_post(&ptr->empty);
+	ptr->out = (ptr->out + 1) % BUFFER_SIZE;
 
+        fprintf(fd, "%s", elem.data);
+        
+    }
+	sem_post(&ptr->mutex);
+	sem_post(&ptr->empty);
+}
+//Appends Directory string to display
 void appendDir(char* newDir){
 	strcat(currentDir,"/");
 	strcat(currentDir,newDir);
 	strcat(currentDir,"$");
 }
-	
-void init_shell() 
-{ 
-	clear(); 
-	printf("\n\n\n\n******************"
-		"************************"); 
-	printf("\n\n\n\t****MY SHELL****"); 
-	printf("\n\n\t-USE AT YOUR OWN RISK-"); 
-	printf("\n\n\n\n*******************"
-		"***********************"); 
-	char* username = getenv("USER"); 
-	printf("\n\n\nUSER is: @%s", username); 
-	printf("\n"); 
-	sleep(1); 
-	clear(); 
-} 
-
-// Function to take input 
+	 
+// Function to take input and send to parse command 
 int takeInput(char* str) 
 { 
 	char* buf;
 	char* userString;
 	char* username = getenv("USER");
-	char testDir[100];
-	
-	strcpy(testDir,"\ngrant@grant-VirtualBox:");
+	char testDir[250];
+	//Spoof the directory to display 
+	strcpy(testDir,"\n");
+	strcat(testDir, username);
+	strcat(testDir,"@");
+	strcat(testDir, username);
+	strcat(testDir,"-VirtualBox");
 	strcat(testDir,currentDir);
 	
 	
 	
 	 
-	printf(ANSI_COLOR_GREEN "%s" ANSI_COLOR_RESET,testDir );
-	buf = readline(ANSI_COLOR_GREEN /*"\ngrant@grant-VirtualBox:~$ "*/ ""  ANSI_COLOR_RESET ""); 
+	printf(ANSI_COLOR_GREEN "%s"ANSI_COLOR_WHITE ":" ANSI_COLOR_RESET,testDir );
+	buf = readline(""); 
 	if (strlen(buf) != 0) { 
 		add_history(buf); 
 		strcpy(str, buf); 
@@ -82,11 +95,13 @@ void execArgs(char** parsed)
 	if (pid == -1) { 
 		printf("\nFailed forking child.."); 
 		return; 
+	//if fork is succesful execuete parsed command 
 	} else if (pid == 0) { 
 		if (execvp(parsed[0], parsed) < 0) { 
 			printf("\nCould not execute command.."); 
 		} 
 		exit(0); 
+	//main program should wait until the child finishes execueting commands 
 	} else { 
 		// waiting for child to terminate 
 		wait(NULL); 
@@ -147,25 +162,7 @@ void execArgsPiped(char** parsed, char** parsedpipe)
 			wait(NULL); 
 		} 
 	} 
-} 
-
-// Help command builtin 
-void openHelp() 
-{ 
-	puts("\n***WELCOME TO MY SHELL HELP***"
-		"\nCopyright @ Suprotik Dey"
-		"\n-Use the shell at your own risk..."
-		"\nList of Commands supported:"
-		"\n>cd"
-		"\n>ls"
-		"\n>exit"
-		"\n>all other general commands available in UNIX shell"
-		"\n>pipe handling"
-		"\n>improper space handling"); 
-
-	return; 
-} 
-
+}
 // Function to execute builtin commands 
 int ownCmdHandler(char** parsed) 
 { 
@@ -196,11 +193,8 @@ int ownCmdHandler(char** parsed)
 	case 2: 
 		chdir(parsed[1]); 
 		appendDir(parsed[1]);
-		//dirChanged++;
-                //strcpy(currentDir,parsed[1]);
 		return 1; 
 	case 3: 
-		openHelp(); 
 		return 1; 
 	case 4: 
 		username = getenv("USER"); 
@@ -291,7 +285,7 @@ int main(/*int argc, char **argv*/)
 
 	while (1) { 
 		// print shell line 
-		printDir(); 
+		//printDir(); 
 		// take input 
 		if (takeInput(inputString)) 
 			continue; 
@@ -312,4 +306,3 @@ int main(/*int argc, char **argv*/)
 	} 
 	return 0; 
 } 
-
