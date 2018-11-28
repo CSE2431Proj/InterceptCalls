@@ -14,13 +14,13 @@
 
 // Clearing the shell using escape sequences 
 #define clear() printf("\033[H\033[J") 
-//Define bold green and reset fonts for shell 
+//Define bold green and reset fonts for shell (to look more realistic)
 #define ANSI_COLOR_GREEN "\x1b[92m \x1b[1m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 #define ANSI_COLOR_WHITE "\x1b[0m \x1b[1m"
-char currentDir[100]="~"; //Char Array for displaying current directory in fake terminal
-//Conumer method for execueting commands put into the buffer by the soccket
-//Appends Directory string to display
+//Char Array for displaying current directory in fake terminal
+char currentDir[100]="~"; 
+//Appends Directory string to display to make it look like normal shell (nothing changed)
 void appendDir(char* newDir){
 	strcat(currentDir,"/");
 	strcat(currentDir,newDir);
@@ -30,10 +30,14 @@ void appendDir(char* newDir){
 // Function to take input and send to parse command 
 int takeInput(char* str) 
 { 
+	//buffer to be execueted
 	char* buf;
-	char* userString;
+	//Get user name to be displayed
 	char* username = getenv("USER");
+	//variable thats printed before command inputs
+	//(includes newline, usermame, current directory adn @Virtualbox~)
 	char testDir[250];
+	//shared memory name for retrieval
 	const char *name = "Shared Mem";
         int shm_fd;		// file descriptor, from shm_open()
  	char *ptr;	// base address, from mmap()
@@ -48,7 +52,7 @@ int takeInput(char* str)
 	
 	//Retrieve Shared Memory
 	
-	/* open the shared memory segment as if it was a file */
+	/* open the shared memory segment as if it was a file*/ 
   	shm_fd = shm_open(name, O_RDONLY, 0666);
   	if (shm_fd == -1) {
     		printf("Shared memory failed\n");
@@ -67,11 +71,11 @@ int takeInput(char* str)
 
 
 	
-
+	//Set fonts and colors to spoof command line in terminal 
 	printf(ANSI_COLOR_GREEN "%s"ANSI_COLOR_WHITE ":" ANSI_COLOR_RESET,testDir );
-	//buf = readline(""); 
+	//if buffer input is not empty, execuete strcpy
 	if (strlen(buf) != 0) { 
-		add_history(buf); 
+		//copy buffer (from shared memory) into string
 		strcpy(str, buf); 
 		return 0; 
 	} else { 
@@ -79,13 +83,6 @@ int takeInput(char* str)
 	} 
 } 
 
-// Function to print Current Directory. 
-void printDir() 
-{ 
-	char cwd[1024]; 
-	getcwd(cwd, sizeof(cwd)); 
-	printf("\nDir: %s", cwd); 
-} 
 
 // Function where the system command is executed 
 void execArgs(char** parsed) 
@@ -110,7 +107,7 @@ void execArgs(char** parsed)
 	} 
 } 
 
-// Function where the piped system commands is executed F
+// Function where the piped system commands is executed 
 void execArgsPiped(char** parsed, char** parsedpipe) 
 { 
 	// 0 is read end, 1 is write end 
@@ -172,21 +169,21 @@ int ownCmdHandler(char** parsed)
 	char* username; 
 	FILE *fp;
 	char* fileName;
-
+	//custom commands can be added here 
 	ListOfOwnCmds[0] = "exit"; 
 	ListOfOwnCmds[1] = "cd"; 
 	ListOfOwnCmds[2] = "help"; 
 	ListOfOwnCmds[3] = "hello"; 
 	ListOfOwnCmds[4] = "browns";
         ListOfOwnCmds[5] = "mkdir";
-
+	//if parsed[0] is equal to a custom command, go to switch statement
 	for (i = 0; i < NoOfOwnCmds; i++) { 
 		if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) { 
 			switchOwnArg = i + 1; 
 			break; 
 		} 
 	} 
-
+	//will be execueted if parsed[0] mathces input command
 	switch (switchOwnArg) { 
 	case 1: 
 		printf("\nGoodbye\n"); 
@@ -204,9 +201,12 @@ int ownCmdHandler(char** parsed)
 			"\nUse help to know more..\n", 
 			username); 
 		return 1; 
+	//case 5 and 6 are examples of new commands or overriding old commands
 	case 5:
 		printf("They Stink\n");
 		return 1;
+	//THis command changes mkdir so that a .txt file is created instead of a new directory
+	//(Proof of concept)
         case 6:
 		strcpy(fileName,parsed[1]);
 		strcat(fileName,".txt");
@@ -279,16 +279,15 @@ int processString(char* str, char** parsed, char** parsedpipe)
 
 int main(/*int argc, char **argv*/) 
 { 
+	//builds arrays for input to be put in
 	char inputString[MAXCOM], *parsedArgs[MAXLIST]; 
 	char* parsedArgsPiped[MAXLIST]; 
 	int execFlag = 0; 
-	//init_shell(); 
+	
 
 	while (1) { 
-		// print shell line 
-		//printDir(); 
-		// take input
-		 
+		
+		// take input (or retreive from shared memory)		 
 		if (takeInput(inputString)) 
 			continue; 
 		// process 
