@@ -1,0 +1,38 @@
+#####README#######
+
+Running the "make" command from this directory will compile all of our programs.
+
+Running "make clean" will remove the object files created and other files associated with make
+
+###Shell and Client(command sender)#####
+To test the shell, make the ShellSocket folder the working directory and use the following commands :
+the command for the shell is  ./shellhideMe
+
+the command to send a message to the server is ./clienthideMe from within the "ShellSocket" directory
+
+the shell will display a "client connected" message, press enter to execute the stored command 
+ 
+sending the command "exit" from the client kills the server and the shell
+
+#######Hiding Files #########
+To hide the shell and kernel module use the command ./Infect.sh 
+
+ (WARNING!!!: LINE 166 in "lkm\infection.c" MUST BE COMMENTED OUT FOR THE SYSTEM TO RECOVER NORMALLY!!!) LINE IS COMMENTED OUT BY DEFAULT . MUST UNCOMMENT TO REMOVE FROM LSMOD LIST
+
+To recover the system use the command ./Purge.sh 
+
+When the system is "infected" any file or folder with the prefix or containing the substring "hideMe" will be hidden from sight but still accessable.
+
+
+####Test commands for debugging #####
+
+the command to see the current message in shared memory is ./sharehideMe
+
+to clear the current message use ./delhideMe
+
+We did not manage to build a main program to install everything and do the hiding automatically. 
+
+###########FOR COMPILATION ERRORS!!!#######
+For the readline package if needed: 
+
+#sudo apt-get install libreadline-dev
